@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ino.web.freeBoard.mapper.FreeBoardMapper">
+
+	<!-- 여기서 resultType은 return타입이고, parameter 타입은 parameterType 이렇게 쓴다. -->
+	<!-- 조건이 잘못걸렸따! -->
+
+	<select id="freeBoardGetList" resultType="freeBoardDto"
+		parameterType="Map">
+		SELECT RNUM, a.NUM,a.NAME,a.TITLE,a.CONTENT,REGDATE
+		FROM(
+		SELECT
+		ROW_NUMBER() OVER (ORDER BY NUM DESC) RNUM,NUM,NAME,TITLE,CONTENT,REGDATE FROM FREEBOARD
+		WHERE 1=1
+		<if test="searchType == 'DCODE001'">
+			AND NUM like #{searchWord}
+		</if>
+		<if test="searchType == 'DCODE002'">
+			AND TITLE like '%' || #{searchWord} || '%'
+		</if>
+		<if test="searchType == 'DCODE003'">
+			AND TO_CHAR(REGDATE,'YYYY-MM-DD') BETWEEN #{searchD1} AND #{searchD2}
+		</if>
+		<if test="searchType == ''">
+			AND 1=1
+		</if>
+		)a WHERE RNUM BETWEEN #{startPage} AND #{endPage}
+		ORDER BY NUM DESC
+	</select>
+
+	<!-- 레코드 전체 개수 -->
+	<select id="freeBoardCount" resultType="int" parameterType="Map">
+		SELECT COUNT(*) FROM
+		FREEBOARD
+		<if test="searchType == 'DCODE001'">
+			WHERE NUM like #{searchWord}
+		</if>
+		<if test="searchType == 'DCODE002'">
+			WHERE TITLE like '%' || #{searchWord} || '%'
+		</if>
+		<if test="searchType == 'DCODE003'">
+			WHERE TO_CHAR(REGDATE,'YYYY-MM-DD') BETWEEN #{searchD1} AND #{searchD2}  
+		</if>
+	</select>
+
+	<select id="freeBoardGetType" parameterType="Map" resultType="Map">
+		SELECT
+		A.CODE,A.CODE_NAME,B.DETAIL_CODE,B.DETAIL_CODE_NAME,B.USE_YN
+		FROM MASTERTABLE A, DETAILTABLE B
+		WHERE A.CODE=B.CODE
+		AND B.USE_YN='Y'
+		ORDER BY B.DETAIL_CODE ASC
+	</select>
+
+	<insert id="freeBoardInsertPro" parameterType="freeBoardDto">
+		INSERT INTO
+		FREEBOARD(NUM, NAME, TITLE, CONTENT, REGDATE)
+		VALUES(
+		SEQ_FREEBOARD.NEXTVAL, #{name}, #{title}, #{content}, SYSDATE)
+	</insert>
+
+	<!-- <insert id="freeBoardInsertPro" parameterType="freeBoardDto"> INSERT 
+		INTO FREEBOARD(NUM, TITLE, NAME, REGDATE, CONTENT) VALUES( FREEBOARDNUM_SEQ.NEXTVAL, 
+		#{title}, #{name}, SYSDATE, #{content}) </insert> -->
+
+
+	<select id="freeBoardDetailByNum" resultType="freeBoardDto"
+		parameterType="int">
+		SELECT NUM, NAME, TITLE, CONTENT,
+		TO_CHAR(REGDATE,'YYYY/MM/DD')
+		REGDATE FROM FREEBOARD
+		WHERE NUM=#{num}
+	</select>
+
+	<!-- <select id="freeBoardDetailByNum" resultType="freeBoardDto" parameterType="int"> 
+		SELECT NUM, TITLE, NAME, TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE, CONTENT FROM 
+		FREEBOARD WHERE NUM=#{num} </select> -->
+
+	<select id="freeBoardNewNum" resultType="int">
+		SELECT MAX(NUM)
+		FROM
+		FREEBOARD
+	</select>
+
+	<update id="freeBoardModify" parameterType="freeBoardDto">
+		UPDATE FREEBOARD
+		SET
+		TITLE = #{title}
+		, CONTENT = #{content}
+		WHERE NUM = #{num}
+
+	</update>
+
+	<update id="freeBoardDelete" parameterType="int">
+		DELETE FROM FREEBOARD
+		WHERE NUM
+		= #{num}
+
+	</update>
+
+
+</mapper>
